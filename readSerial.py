@@ -14,8 +14,6 @@ from dotenv import Dotenv
 dotenv = Dotenv(os.path.join(os.path.dirname(__file__), ".env")) 
 os.environ.update(dotenv)
 
-
-
 #import environment variables
 VIANT_API=str(os.getenv("VIANT_API"))
 VIANT_API_VERSION=str(os.getenv("VIANT_API_VERSION"))
@@ -25,7 +23,6 @@ ACTION_NAME=str(os.getenv("ACTION_NAME"))
 SENSOR_UN=str(os.getenv("SENSOR_UN"))
 SENSOR_PW=str(os.getenv("SENSOR_PW"))
 SERIAL_PORT=str(os.getenv("SERIAL_PORT"))
-
 
 # configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -99,7 +96,6 @@ def login():
         logging.debug(response)
     except Exception as e:
         logging.exception(e)
-
 
 # Print POST request in a pretty way
 def pretty_print_POST(req):
