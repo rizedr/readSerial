@@ -9,6 +9,7 @@ import os
 import time
 import logging
 import os
+import json
 from dotenv import Dotenv
 dotenv = Dotenv(os.path.join(os.path.dirname(__file__), ".env")) 
 os.environ.update(dotenv)
@@ -23,8 +24,8 @@ DEVICE_ID=os.getenv("DEVICE_ID")
 ACTION_NAME=str(os.getenv("ACTION_NAME"))
 SENSOR_UN=str(os.getenv("SENSOR_UN"))
 SENSOR_PW=str(os.getenv("SENSOR_PW"))
-TOKEN=str(os.getenv("TOKEN"))
 SERIAL_PORT=str(os.getenv("SERIAL_PORT"))
+
 
 # configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -65,30 +66,39 @@ def parse(data):
     print (parsed_data)
     return parsed_data
 
-
-
 # Publish data to Viant via restAPI
 def restAPI(parsed_data):
     logging.debug("Building REST request")
     logging.debug(parsed_data)
     url = VIANT_API + '/' + VIANT_API_VERSION + '/asset/' + ASSET_ID + '/' + ACTION_NAME
-
+    logging.debug(TOKEN)
     headers = {'Content-Type': 'application/json',
                'Authorization': TOKEN}
                
 
     data = '{"Humidity":"' + parsed_data['h'] + '","CO2":"' + parsed_data['c'] + '","Temperature":"' + parsed_data['t'] + '"}'
     logging.debug(data)
-    req = requests.Request('POST', url, headers=headers, data=data)
-    prepared = req.prepare()
-    pretty_print_POST(prepared)
+
     logging.info("Sending data via REST API")
     try:
         response = requests.post(url, headers=headers, data=data)
+
     except Exception as e:
         logging.exception(e)
     logging.debug(response.text)
     logging.debug("\nSending data via REST API\n")
+
+def login():
+    global TOKEN
+    url = VIANT_API + '/' + VIANT_API_VERSION + '/auth'
+    headers = {'Content-Type':'application/json'}
+    payload = '{"username":"'+ SENSOR_UN +'","password":"' + SENSOR_PW +'"}'
+    try:
+        response = requests.post(url, headers=headers, data=payload)
+        TOKEN = "JWT " + json.loads(response.text)['access_token']
+        logging.debug(response)
+    except Exception as e:
+        logging.exception(e)
 
 
 # Print POST request in a pretty way
@@ -102,5 +112,5 @@ def pretty_print_POST(req):
 
 
 #run
-#login()
+login()
 read_serial()
