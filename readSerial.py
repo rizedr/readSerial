@@ -14,8 +14,6 @@ from dotenv import Dotenv
 dotenv = Dotenv(os.path.join(os.path.dirname(__file__), ".env")) 
 os.environ.update(dotenv)
 
-print dotenv
-
 #import environment variables
 ENVIRONMENT=str(os.getenv("ENVIRONMENT"))
 VIANT_API=str(os.getenv("VIANT_API"))
@@ -24,6 +22,7 @@ ASSET_ID=str(os.getenv("ASSET_ID"))
 ASSET_STATE=str(os.getenv("ASSET_STATE"))
 ASSET_STATE_ATTRIBUTE_NAME=str(os.getenv("ASSET_STATE_ATTRIBUTE_NAME"))
 ACTION_NAME=str(os.getenv("ACTION_NAME"))
+DELTA=float(os.getenv("DELTA"))
 SENSOR_UN=str(os.getenv("SENSOR_UN"))
 SENSOR_PW=str(os.getenv("SENSOR_PW"))
 DEVICE_ID=os.getenv("DEVICE_ID")
@@ -53,13 +52,35 @@ def read_serial():
             logging.info("Complete data packet received")
             parsed_data = parse(data)
             if int(parsed_data['i'])==42:
-                restAPI(parsed_data) 
+                updateAsset(parsed_data) 
         else:
             logging.warning("Incomplete data packet received")
 
 # Dummy Read Serial port used for development
 def dummy_read_serial():
-    logging.debug("Started dummy reads")
+    logging.info("Starting dummy reads")
+    parsed_data = [
+        {
+            'h': "100",
+            'c': "1000",
+            't': "10"
+        },
+        {
+            'h': "200",
+            'c': "2000",
+            't': "20"
+        },
+        {
+            'h': "300",
+            'c': "3000",
+            't': "30"
+        }
+    ]
+    i = 0
+    while True:
+        logging.info(i%3)
+        updateAsset(parsed_data[i%3])
+        i = i + 1
 
 # Parse data string
 def parse(data):
@@ -72,10 +93,37 @@ def parse(data):
     print (parsed_data)
     return parsed_data
 
+# Update the asset - validates state and then calls the action
+def updateAsset(parsed_data):
+    # Pause the script for DELTA seconds
+    time.sleep(DELTA)
+
+    url = VIANT_API + '/' + VIANT_API_VERSION + '/asset/' + ASSET_ID
+    logging.debug(TOKEN)
+    headers = {'Content-Type': 'application/json',
+               'Authorization': TOKEN}
+    
+    try:
+        response = requests.get(url, headers=headers)
+    except Exception as e:
+        logging.exception(e)
+    
+
+    data = json.loads(response.text)
+    logging.debug(data)
+
+    current_state = data['attributes'][ASSET_STATE_ATTRIBUTE_NAME]
+
+    if current_state == ASSET_STATE:
+        pushSensorData(parsed_data)
+    else:
+        logging.warning("Asset not in valid state for update.")
+
 # Publish data to Viant via restAPI
-def restAPI(parsed_data):
+def pushSensorData(parsed_data):
     logging.debug("Building REST request")
     logging.debug(parsed_data)
+
     url = VIANT_API + '/' + VIANT_API_VERSION + '/asset/' + ASSET_ID + '/' + ACTION_NAME
     logging.debug(TOKEN)
     headers = {'Content-Type': 'application/json',
@@ -121,6 +169,7 @@ def pretty_print_POST(req):
 login()
 
 if ENVIRONMENT == "development":
+    logging.warning("The script is starting in dummy more. Change ENVIRONMENT variable.")
     dummy_read_serial()
 else:
     read_serial()
