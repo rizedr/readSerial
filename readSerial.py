@@ -14,14 +14,19 @@ from dotenv import Dotenv
 dotenv = Dotenv(os.path.join(os.path.dirname(__file__), ".env")) 
 os.environ.update(dotenv)
 
+print dotenv
+
 #import environment variables
+ENVIRONMENT=str(os.getenv("ENVIRONMENT"))
 VIANT_API=str(os.getenv("VIANT_API"))
 VIANT_API_VERSION=str(os.getenv("VIANT_API_VERSION"))
 ASSET_ID=str(os.getenv("ASSET_ID"))
-DEVICE_ID=os.getenv("DEVICE_ID")
+ASSET_STATE=str(os.getenv("ASSET_STATE"))
+ASSET_STATE_ATTRIBUTE_NAME=str(os.getenv("ASSET_STATE_ATTRIBUTE_NAME"))
 ACTION_NAME=str(os.getenv("ACTION_NAME"))
 SENSOR_UN=str(os.getenv("SENSOR_UN"))
 SENSOR_PW=str(os.getenv("SENSOR_PW"))
+DEVICE_ID=os.getenv("DEVICE_ID")
 SERIAL_PORT=str(os.getenv("SERIAL_PORT"))
 
 # configure logging
@@ -51,6 +56,10 @@ def read_serial():
                 restAPI(parsed_data) 
         else:
             logging.warning("Incomplete data packet received")
+
+# Dummy Read Serial port used for development
+def dummy_read_serial():
+    logging.debug("Started dummy reads")
 
 # Parse data string
 def parse(data):
@@ -85,6 +94,7 @@ def restAPI(parsed_data):
     logging.debug(response.text)
     logging.debug("\nSending data via REST API\n")
 
+# Login to Treum API
 def login():
     global TOKEN
     url = VIANT_API + '/' + VIANT_API_VERSION + '/auth'
@@ -109,4 +119,8 @@ def pretty_print_POST(req):
 
 #run
 login()
-read_serial()
+
+if ENVIRONMENT == "development":
+    dummy_read_serial()
+else:
+    read_serial()
