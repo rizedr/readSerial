@@ -112,7 +112,19 @@ def updateAsset(parsed_data):
     data = json.loads(response.text)
     logging.debug(data)
 
-    current_state = data['attributes'][ASSET_STATE_ATTRIBUTE_NAME]
+    state_attribute = None
+
+    for attribute in data['attributes']:
+        logging.debug(attribute)
+        if attribute['name'] == ASSET_STATE_ATTRIBUTE_NAME:
+            state_attribute = attribute
+            logging.debug(state_attribute)
+
+    if state_attribute is None:
+        logging.exception('No State Machine attribute found')
+        return
+
+    current_state = attribute['value']
 
     if current_state == ASSET_STATE:
         pushSensorData(parsed_data)
